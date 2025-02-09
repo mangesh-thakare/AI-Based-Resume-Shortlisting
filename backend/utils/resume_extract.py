@@ -4,6 +4,7 @@ from backend.config import config
 import regex as re
 import json
 
+
 #function for extracting entities from resume
 def generate_response(file: UploadFile):
     system_prompt=("You are a resume entities extraction machine"
@@ -12,8 +13,8 @@ def generate_response(file: UploadFile):
             "{\"name\": \"name\",\"college name\": \"name of the college\", \"10th percentage\": \"percentage\", \"12th or diploma percentage\": \"percentage\", \"CGPA\": \"value\", \"skills\": [\"skill1\", \"skill2\", \"skill3\"]}. "
             "For skills, include both explicitly mentioned skills and inferred skills based on projects and internships in the resume. "
             "In the resume either 12th percentage is present or diploma percentage will be present , extract one of the percentage present. Don't confuse diploma percentage with 10th percentage"
-            "for 12th percentage in resume , 12th may also be written as HSC so extract the percentage of hsc if 12th not written "
-            "for 10th percentage in resume , 10th may also be written as SSC so extract the percentage of ssc if 10th not written "
+            "for 12th percentage in resume , 12th may also be written as HSC so extract the percentage of hsc if 12th not written . Don't write the '%' symbol "
+            "for 10th percentage in resume , 10th may also be written as SSC so extract the percentage of ssc if 10th not written . Don't write the '%' symbol"
             "Ensure valid JSON output and do not include duplicates or additional information. If the specified detail is not present, write it as null or an empty list."
     )
     extracted_text = text_extract.extract_pdf_text(file)
@@ -27,27 +28,26 @@ def generate_response(file: UploadFile):
         max_tokens=300
     )
     
-    llm_output = response.choices[0].message.content.strip("```json\n")  # Remove Markdown JSON format
+    llm_output = response.choices[0].message.content.strip("```json\n")  
     response=clean_llm_response(llm_output)
-    return response  # Convert string to JSON
+    return response  
 
 #function for cleaning the llm response
 def clean_llm_response(llm_output: str) -> dict:
     try:
-        # Extract JSON content safely
+        # Extract JSON content 
         json_match = re.search(r"\{.*\}", llm_output, re.DOTALL)
         if not json_match:
             raise ValueError("No valid JSON found in response.")
         
         json_text = json_match.group()
 
-        # Remove trailing commas (only inside JSON objects/arrays)
+        # Removing trailing commas
         json_text = re.sub(r",\s*([\]}])", r"\1", json_text)
 
         # Parse JSON
         data = json.loads(json_text)
 
-        # Define expected structure
         default_response = {
             "name": None,
             "college name": None,
@@ -72,5 +72,5 @@ def clean_llm_response(llm_output: str) -> dict:
     except (json.JSONDecodeError, ValueError) as e:
         return {
             "error": f"Failed to parse JSON: {str(e)}",
-            "raw_response": llm_output  # Include raw output for debugging
+            "raw_response": llm_output  
         }

@@ -8,7 +8,9 @@ from ..config import config
 def extract_hr_skills(file:UploadFile):
     system_prompt=("""you are a required skills extractor machine from job description from college students resume
                   Extract the required skills from the given job description which are according for college student. 
-            Provide the skills as a list of words or short phrases in JSON format.""")
+            Provide the skills as a list of words or short phrases in JSON format as follows -
+                   "{\"required_skills\": [\"skill1\", \"skill2\", \"skill3\"]}. "
+                   """)
     extracted_text=text_extract.extract_pdf_text(file)
     response=config.client.chat.completions.create(
         model="llama-3.1-8b-instant",
@@ -26,17 +28,16 @@ def extract_hr_skills(file:UploadFile):
 #function for cleaning the llm response 
 def clean_hr_skills_response(llm_output: str) -> dict:
     try:
-        # Extract JSON content safely
+        # Extract JSON content 
         json_match = re.search(r"\{.*\}", llm_output, re.DOTALL)
         if not json_match:
             raise ValueError("No valid JSON found in response.")
         
         json_text = json_match.group()
 
-        # Remove trailing commas inside JSON objects/arrays
+        # Removing trailing commas inside JSON objects/arrays
         json_text = re.sub(r",\s*([\]}])", r"\1", json_text)
-
-        # Parse JSON
+        
         data = json.loads(json_text)
 
         # Ensure extracted skills are formatted correctly
@@ -49,6 +50,6 @@ def clean_hr_skills_response(llm_output: str) -> dict:
     except (json.JSONDecodeError, ValueError) as e:
         return {
             "error": f"Failed to parse JSON: {str(e)}",
-            "raw_response": llm_output  # Include raw output for debugging
+            "raw_response": llm_output  
         }
 

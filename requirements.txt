@@ -4,3 +4,5 @@ regex
 python-dotenv
 python-multipart
 uvicorn
+sqlalchemy[asyncio]
+pymysql
